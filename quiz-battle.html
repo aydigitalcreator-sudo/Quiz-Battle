@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Quiz Battle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#12142B;
+  --ink-2:#1B1E3D;
+  --paper:#F5F3ED;
+  --signal:#FF5A36;
+  --signal-dim:#c74326;
+  --good:#35C97B;
+  --bad:#E23A5D;
+  --gold:#FFC93C;
+  --line:rgba(245,243,237,0.14);
+  --text-dim:rgba(245,243,237,0.62);
+  --disp:'Archivo Black', sans-serif;
+  --body:'Work Sans', sans-serif;
+  --mono:'JetBrains Mono', monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--ink);
+  color:var(--paper);
+  font-family:var(--body);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important; transition:none !important;}
+}
+#app{
+  width:100%;
+  max-width:480px;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  background:
+    radial-gradient(600px 300px at 100% -10%, rgba(255,90,54,0.16), transparent 60%),
+    var(--ink);
+}
+.screen{display:none; flex-direction:column; flex:1; padding:20px 18px 28px;}
+.screen.active{display:flex;}
+
+/* ---------- Ad slots ---------- */
+.ad-slot{
+  width:100%;
+  min-height:50px;
+  border:1px dashed var(--line);
+  color:var(--text-dim);
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.02em;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px;
+  margin:14px 0 0;
+  text-align:center;
+}
+.ad-slot.top{margin:0 0 14px;}
+
+/* ---------- Home ---------- */
+.hero{
+  position:relative;
+  padding:34px 20px 26px;
+  margin:0 -18px 22px;
+  background:linear-gradient(135deg, var(--ink-2) 0%, var(--ink) 78%);
+  clip-path:polygon(0 0,100% 0,100% 86%,0 100%);
+  border-bottom:2px solid var(--signal);
+}
+.hero h1{
+  font-family:var(--disp);
+  font-size:38px;
+  line-height:0.95;
+  margin:0 0 6px;
+  color:var(--paper);
+}
+.hero h1 span{color:var(--signal);}
+.hero p{margin:0; color:var(--text-dim); font-size:14px; max-width:280px;}
+
+.menu{display:flex; flex-direction:column; gap:10px; margin-top:4px;}
+.menu-btn{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  background:var(--ink-2);
+  border:1px solid var(--line);
+  color:var(--paper);
+  font-family:var(--body);
+  font-weight:600;
+  font-size:15px;
+  padding:16px 18px;
+  cursor:pointer;
+  text-align:left;
+  clip-path:polygon(0 0, 100% 0, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.menu-btn.primary{
+  background:var(--signal);
+  border-color:var(--signal);
+  color:var(--ink);
+}
+.menu-btn .arrow{font-family:var(--mono); opacity:.7;}
+.menu-btn:active{transform:translateY(1px);}
+
+.stat-row{
+  display:flex;
+  gap:10px;
+  margin-top:16px;
+}
+.stat-box{
+  flex:1;
+  border:1px solid var(--line);
+  padding:12px 14px;
+  text-align:left;
+}
+.stat-box .label{font-size:11px; color:var(--text-dim); text-transform:lowercase;}
+.stat-box .val{font-family:var(--mono); font-weight:700; font-size:20px; color:var(--gold); margin-top:2px;}
+
+/* ---------- Header / back ---------- */
+.top-bar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:16px;
+}
+.back-btn{
+  background:none;
+  border:1px solid var(--line);
+  color:var(--paper);
+  font-family:var(--mono);
+  font-size:13px;
+  padding:8px 12px;
+  cursor:pointer;
+}
+.top-bar h2{font-family:var(--disp); font-size:20px; margin:0; letter-spacing:.01em;}
+
+/* ---------- Mode select ---------- */
+.mode-grid{display:flex; flex-direction:column; gap:8px;}
+.mode-tag{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:var(--ink-2);
+  border:1px solid var(--line);
+  border-left:5px solid var(--m-color, var(--signal));
+  padding:13px 14px;
+  cursor:pointer;
+}
+.mode-tag .emoji{font-size:22px;}
+.mode-tag .name{font-weight:600; font-size:14.5px;}
+.mode-tag .best{margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--text-dim);}
+
+/* ---------- Gameplay ---------- */
+.hud{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-family:var(--mono);
+  font-size:13px;
+  margin-bottom:10px;
+  color:var(--text-dim);
+}
+.hud .lives{color:var(--bad); letter-spacing:2px;}
+.hud .timer{font-weight:700; color:var(--paper);}
+.hud .timer.warn{color:var(--signal);}
+.progress-bar{
+  width:100%; height:4px; background:var(--line); margin-bottom:22px; position:relative;
+}
+.progress-bar .fill{
+  position:absolute; left:0; top:0; bottom:0; background:var(--signal); width:0%;
+}
+
+.q-index{font-family:var(--mono); font-size:12px; color:var(--text-dim); margin-bottom:8px;}
+.q-text{
+  background:var(--paper);
+  color:var(--ink);
+  font-weight:700;
+  font-size:19px;
+  line-height:1.32;
+  padding:22px 18px;
+  margin-bottom:18px;
+  clip-path:polygon(0 0,100% 0,100% 100%, 14px 100%, 0 calc(100% - 14px));
+}
+.options{display:flex; flex-direction:column; gap:10px;}
+.option{
+  background:var(--ink-2);
+  border:1px solid var(--line);
+  color:var(--paper);
+  font-family:var(--body);
+  font-size:14.5px;
+  font-weight:500;
+  padding:14px 16px;
+  text-align:left;
+  cursor:pointer;
+}
+.option.correct{background:rgba(53,201,123,0.18); border-color:var(--good); color:var(--good);}
+.option.wrong{background:rgba(226,58,93,0.18); border-color:var(--bad); color:var(--bad);}
+.option[disabled]{cursor:default;}
+.streak-flag{
+  margin-top:16px; font-family:var(--mono); font-size:12px; color:var(--gold); text-align:center; min-height:16px;
+}
+
+/* ---------- Results / Game over ---------- */
+.result-title{font-family:var(--disp); font-size:30px; margin:6px 0 18px;}
+.score-block{
+  display:flex; align-items:baseline; gap:8px; margin-bottom:20px;
+}
+.score-block .num{font-family:var(--mono); font-size:48px; font-weight:700; color:var(--gold);}
+.score-block .of{font-family:var(--mono); font-size:16px; color:var(--text-dim);}
+.result-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px;
+}
+.result-cell{border:1px solid var(--line); padding:12px 14px;}
+.result-cell .label{font-size:11px; color:var(--text-dim);}
+.result-cell .val{font-family:var(--mono); font-weight:700; font-size:18px; margin-top:2px;}
+.result-cell.good .val{color:var(--good);}
+.result-cell.bad .val{color:var(--bad);}
+
+.gameover-hearts{font-size:32px; letter-spacing:6px; color:var(--bad); margin:8px 0 18px; text-align:center;}
+
+/* ---------- Ad modal (interstitial / rewarded) ---------- */
+.modal-overlay{
+  position:absolute; inset:0; background:rgba(10,10,20,0.86);
+  display:none; align-items:center; justify-content:center; z-index:20; padding:24px;
+}
+.modal-overlay.active{display:flex;}
+.modal-card{
+  width:100%; max-width:340px; background:var(--ink-2); border:1px solid var(--line);
+  padding:24px 20px; text-align:center;
+}
+.modal-card .ad-frame{
+  border:1px dashed var(--line); padding:26px 10px; margin-bottom:16px; font-family:var(--mono);
+  font-size:12px; color:var(--text-dim);
+}
+.modal-card .ad-label{font-family:var(--mono); font-size:11px; color:var(--text-dim); margin-bottom:10px;}
+.modal-card h3{font-family:var(--disp); font-size:17px; margin:0 0 4px;}
+.modal-card .countdown{font-family:var(--mono); font-size:28px; color:var(--gold); margin:10px 0;}
+.modal-card .continue-btn{
+  width:100%; background:var(--signal); color:var(--ink); border:none; font-weight:700;
+  font-family:var(--body); padding:13px; margin-top:6px; cursor:pointer; opacity:0.4; pointer-events:none;
+}
+.modal-card .continue-btn.ready{opacity:1; pointer-events:auto;}
+
+/* ---------- Buttons shared ---------- */
+.btn-stack{display:flex; flex-direction:column; gap:10px; margin-top:auto;}
+.btn{
+  padding:15px; text-align:center; font-family:var(--body); font-weight:700; font-size:14.5px;
+  border:1px solid var(--line); background:var(--ink-2); color:var(--paper); cursor:pointer;
+}
+.btn.primary{background:var(--signal); border-color:var(--signal); color:var(--ink);}
+.btn.gold{background:var(--gold); border-color:var(--gold); color:var(--ink);}
+.btn:active{transform:translateY(1px);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HOME -->
+  <section class="screen active" id="screen-home">
+    <div class="hero">
+      <h1>QUIZ<br><span>BATTLE</span></h1>
+      <p>15 questions. Limited lives. See how far your streak takes you.</p>
+    </div>
+    <div class="menu">
+      <button class="menu-btn primary" data-nav="modeselect" data-quick="1">Play Quiz <span class="arrow">→</span></button>
+      <button class="menu-btn" data-nav="modeselect">Game Modes <span class="arrow">→</span></button>
+      <button class="menu-btn" data-nav="daily">Daily Challenge <span class="arrow">→</span></button>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box"><div class="label">best score</div><div class="val" id="home-best">0</div></div>
+      <div class="stat-box"><div class="label">daily streak</div><div class="val" id="home-daily-streak">0</div></div>
+    </div>
+    <div class="ad-slot"><!-- AD_SLOT: banner, home screen --> banner ad slot</div>
+  </section>
+
+  <!-- MODE SELECT -->
+  <section class="screen" id="screen-modeselect">
+    <div class="top-bar">
+      <button class="back-btn" data-nav="home">← back</button>
+      <h2>Choose a mode</h2>
+    </div>
+    <div class="mode-grid" id="mode-grid"></div>
+    <div class="ad-slot"><!-- AD_SLOT: banner, mode select --> banner ad slot</div>
+  </section>
+
+  <!-- PLAYING -->
+  <section class="screen" id="screen-play">
+    <div class="hud">
+      <span class="lives" id="hud-lives">♥♥♥</span>
+      <span class="timer" id="hud-timer">00:15</span>
+    </div>
+    <div class="progress-bar"><div class="fill" id="progress-fill"></div></div>
+    <div class="q-index" id="q-index">Question 1 / 15</div>
+    <div class="q-text" id="q-text">Question text</div>
+    <div class="options" id="q-options"></div>
+    <div class="streak-flag" id="streak-flag"></div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="screen" id="screen-results">
+    <div class="result-title">RESULTS</div>
+    <div class="score-block"><span class="num" id="res-score">0</span><span class="of">/ 15</span></div>
+    <div class="result-grid">
+      <div class="result-cell good"><div class="label">correct</div><div class="val" id="res-correct">0</div></div>
+      <div class="result-cell bad"><div class="label">wrong</div><div class="val" id="res-wrong">0</div></div>
+      <div class="result-cell"><div class="label">best score (mode)</div><div class="val" id="res-best">0</div></div>
+      <div class="result-cell"><div class="label">best streak</div><div class="val" id="res-streak">0</div></div>
+    </div>
+    <div class="ad-slot"><!-- AD_SLOT: banner, results screen --> banner ad slot</div>
+    <div class="btn-stack">
+      <button class="btn primary" id="res-again">Play Again</button>
+      <button class="btn" id="res-change">Change Mode</button>
+      <button class="btn" id="res-home">Home</button>
+    </div>
+  </section>
+
+  <!-- GAME OVER -->
+  <section class="screen" id="screen-gameover">
+    <div class="result-title">GAME OVER</div>
+    <div class="gameover-hearts">♡♡♡</div>
+    <div class="result-grid">
+      <div class="result-cell good"><div class="label">score so far</div><div class="val" id="go-score">0</div></div>
+      <div class="result-cell"><div class="label">streak</div><div class="val" id="go-streak">0</div></div>
+    </div>
+    <div class="btn-stack">
+      <button class="btn gold" id="go-watchad">❤️ Watch Ad to Continue</button>
+      <button class="btn primary" id="go-tryagain">Try Again</button>
+      <button class="btn" id="go-home">Home</button>
+    </div>
+  </section>
+
+  <!-- DAILY INTRO -->
+  <section class="screen" id="screen-daily">
+    <div class="top-bar">
+      <button class="back-btn" data-nav="home">← back</button>
+      <h2>Daily Challenge</h2>
+    </div>
+    <p style="color:var(--text-dim); font-size:14px; margin-top:0;">One fresh 15-question set per day, same for everyone who plays today. Come back tomorrow for a new one.</p>
+    <div class="stat-row">
+      <div class="stat-box"><div class="label">today's best</div><div class="val" id="daily-today-best">—</div></div>
+      <div class="stat-box"><div class="label">day streak</div><div class="val" id="daily-streak-box">0</div></div>
+    </div>
+    <div class="btn-stack">
+      <button class="btn primary" id="daily-start">Start Today's Challenge</button>
+    </div>
+  </section>
+
+  <!-- DAILY RESULT -->
+  <section class="screen" id="screen-dailyresult">
+    <div class="result-title">DAILY RESULT</div>
+    <div class="score-block"><span class="num" id="dr-score">0</span><span class="of">/ 15</span></div>
+    <div class="result-grid">
+      <div class="result-cell"><div class="label">today's best score</div><div class="val" id="dr-best">0</div></div>
+      <div class="result-cell"><div class="label">day streak</div><div class="val" id="dr-streak">0</div></div>
+    </div>
+    <div class="ad-slot"><!-- AD_SLOT: banner, daily result --> banner ad slot</div>
+    <div class="btn-stack">
+      <button class="btn primary" id="dr-home">Home</button>
+    </div>
+  </section>
+
+  <!-- INTERSTITIAL AD MODAL -->
+  <div class="modal-overlay" id="modal-interstitial">
+    <div class="modal-card">
+      <div class="ad-label"><!-- AD_SLOT: interstitial, between rounds --> advertisement</div>
+      <div class="ad-frame">interstitial ad placeholder</div>
+      <div class="countdown" id="inter-countdown">3</div>
+      <button class="btn primary continue-btn" id="inter-continue">Continue</button>
+    </div>
+  </div>
+
+  <!-- REWARDED AD MODAL -->
+  <div class="modal-overlay" id="modal-rewarded">
+    <div class="modal-card">
+      <div class="ad-label"><!-- AD_SLOT: rewarded, extra life --> advertisement</div>
+      <div class="ad-frame">rewarded ad placeholder</div>
+      <h3>Watch to earn +1 life</h3>
+      <div class="countdown" id="reward-countdown">5</div>
+      <button class="btn gold continue-btn" id="reward-continue">Claim Extra Life</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   AD SYSTEM — placeholder / simulated implementation.
+   Replace the bodies of showBannerAds(), showInterstitialAd(),
+   and showRewardedAd() with real ad SDK calls (e.g. AdSense
+   auto ads for banners, an H5-games rewarded/interstitial
+   provider for the modal formats). The rest of the app calls
+   these three functions and reacts to their callbacks, so the
+   game logic never needs to change when real ads are wired in.
+   ========================================================= */
+function showBannerAds(){
+  // Banner <div class="ad-slot"> elements are already in the DOM
+  // on Home, Mode Select, Results and Daily Result. Point your ad
+  // network's banner script at .ad-slot containers.
+}
+function showInterstitialAd(onDone){
+  const modal = document.getElementById('modal-interstitial');
+  const cd = document.getElementById('inter-countdown');
+  const btn = document.getElementById('inter-continue');
+  let t = 3;
+  cd.textContent = t;
+  btn.classList.remove('ready');
+  modal.classList.add('active');
+  const timer = setInterval(()=>{
+    t--;
+    if(t <= 0){
+      clearInterval(timer);
+      cd.textContent = 'Ad complete';
+      btn.classList.add('ready');
+    } else {
+      cd.textContent = t;
+    }
+  },1000);
+  btn.onclick = ()=>{
+    if(!btn.classList.contains('ready')) return;
+    modal.classList.remove('active');
+    onDone();
+  };
+}
+function showRewardedAd(onReward, onSkip){
+  const modal = document.getElementById('modal-rewarded');
+  const cd = document.getElementById('reward-countdown');
+  const btn = document.getElementById('reward-continue');
+  let t = 5;
+  cd.textContent = t;
+  btn.classList.remove('ready');
+  modal.classList.add('active');
+  const timer = setInterval(()=>{
+    t--;
+    if(t <= 0){
+      clearInterval(timer);
+      cd.textContent = 'Reward ready';
+      btn.classList.add('ready');
+    } else {
+      cd.textContent = t;
+    }
+  },1000);
+  btn.onclick = ()=>{
+    if(!btn.classList.contains('ready')) return;
+    modal.classList.remove('active');
+    onReward();
+  };
+}
+
+/* =========================================================
+   QUESTION BANK — 10 modes x 15 questions
+   ========================================================= */
+const MODES = [
+  {id:'general', name:'General Knowledge', emoji:'🧠', color:'#FF5A36'},
+  {id:'science', name:'Science', emoji:'🔬', color:'#35C97B'},
+  {id:'history', name:'History', emoji:'🏛️', color:'#FFC93C'},
+  {id:'geography', name:'Geography', emoji:'🌍', color:'#4EA8FF'},
+  {id:'movies', name:'Movies & TV', emoji:'🎬', color:'#E23A5D'},
+  {id:'sports', name:'Sports', emoji:'⚽', color:'#35C9B0'},
+  {id:'music', name:'Music', emoji:'🎵', color:'#B98CFF'},
+  {id:'tech', name:'Technology', emoji:'💻', color:'#FF9A3D'},
+  {id:'nature', name:'Nature & Animals', emoji:'🦁', color:'#8CD837'},
+  {id:'pop', name:'Pop Culture', emoji:'⭐', color:'#FF7BD1'}
+];
+
+const QUESTIONS = {
+general:[
+["What is the capital of France?",["Paris","Rome","Madrid","Berlin"],0],
+["How many continents are there?",["5","6","7","8"],2],
+["What is the largest ocean on Earth?",["Atlantic","Indian","Arctic","Pacific"],3],
+["Which planet is known as the Red Planet?",["Venus","Mars","Jupiter","Saturn"],1],
+["What is the tallest mountain in the world?",["K2","Kangchenjunga","Everest","Denali"],2],
+["How many days are in a leap year?",["364","365","366","367"],2],
+["What is the currency of Japan?",["Won","Yuan","Yen","Ringgit"],2],
+["Which language has the most native speakers?",["English","Spanish","Mandarin Chinese","Hindi"],2],
+["What is the smallest prime number?",["0","1","2","3"],2],
+["Which organ pumps blood through the body?",["Lungs","Heart","Liver","Kidney"],1],
+["What is the freezing point of water in Celsius?",["0°C","10°C","32°C","100°C"],0],
+["Which country hosted the 2016 Summer Olympics?",["China","UK","Brazil","Russia"],2],
+["What is the largest desert in the world?",["Sahara","Gobi","Antarctic","Kalahari"],2],
+["How many strings does a standard guitar have?",["4","5","6","7"],2],
+["What is the chemical symbol for gold?",["Go","Gd","Au","Ag"],2]
+],
+science:[
+["What planet do we live on?",["Mars","Earth","Venus","Mercury"],1],
+["What gas do plants absorb from the atmosphere?",["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],2],
+["What is the powerhouse of the cell?",["Nucleus","Ribosome","Mitochondria","Golgi body"],2],
+["What force pulls objects toward Earth?",["Magnetism","Gravity","Friction","Tension"],1],
+["What is H2O commonly known as?",["Salt","Water","Hydrogen","Oxygen"],1],
+["Which planet has the most moons in our solar system?",["Earth","Mars","Saturn","Mercury"],2],
+["What is the study of living organisms called?",["Physics","Chemistry","Biology","Geology"],2],
+["What particle carries a negative charge?",["Proton","Neutron","Electron","Photon"],2],
+["What is the boiling point of water in Celsius?",["50°C","90°C","100°C","120°C"],2],
+["Which vitamin is produced when skin is exposed to sunlight?",["Vitamin A","Vitamin C","Vitamin D","Vitamin K"],2],
+["What is the process by which plants make food called?",["Respiration","Photosynthesis","Digestion","Transpiration"],1],
+["What is the closest star to Earth?",["Proxima Centauri","The Sun","Sirius","Betelgeuse"],1],
+["How many bones are in the adult human body?",["186","206","226","246"],1],
+["What is the hardest natural substance on Earth?",["Gold","Iron","Diamond","Quartz"],2],
+["What type of energy does a moving object have?",["Potential","Kinetic","Thermal","Chemical"],1]
+],
+history:[
+["In what year did World War II end?",["1943","1945","1947","1950"],1],
+["Who was the first President of the United States?",["Thomas Jefferson","John Adams","George Washington","Abraham Lincoln"],2],
+["Which ancient civilization built the pyramids of Giza?",["Roman","Greek","Egyptian","Mayan"],2],
+["The Berlin Wall fell in which year?",["1985","1989","1991","1993"],1],
+["Who wrote the Declaration of Independence?",["Benjamin Franklin","Thomas Jefferson","James Madison","John Hancock"],1],
+["Which empire was ruled by Julius Caesar?",["Persian","Roman","Ottoman","Byzantine"],1],
+["What year did the Titanic sink?",["1905","1912","1918","1923"],1],
+["Who was known as the 'Maid of Orléans'?",["Marie Antoinette","Joan of Arc","Catherine the Great","Cleopatra"],1],
+["Which country gifted the Statue of Liberty to the USA?",["Spain","France","UK","Italy"],1],
+["The Great Wall was built primarily to defend against whom?",["Romans","Mongols and northern invaders","Vikings","Persians"],1],
+["Who was the leader of Nazi Germany during WWII?",["Joseph Stalin","Benito Mussolini","Adolf Hitler","Winston Churchill"],2],
+["In which year did India gain independence?",["1945","1947","1950","1952"],1],
+["What ancient wonder stood in Alexandria?",["Colossus of Rhodes","Lighthouse of Alexandria","Hanging Gardens","Temple of Artemis"],1],
+["Who was the first man to walk on the Moon?",["Buzz Aldrin","Yuri Gagarin","Neil Armstrong","John Glenn"],2],
+["The French Revolution began in which year?",["1776","1789","1799","1804"],1]
+],
+geography:[
+["What is the longest river in the world?",["Amazon","Nile","Yangtze","Mississippi"],1],
+["Which country is both in Europe and Asia?",["Russia","Germany","Italy","Norway"],0],
+["What is the smallest country in the world?",["Monaco","San Marino","Vatican City","Liechtenstein"],2],
+["Which country has the largest population?",["USA","India","China","Indonesia"],2],
+["What is the capital of Australia?",["Sydney","Melbourne","Canberra","Perth"],2],
+["Mount Kilimanjaro is located on which continent?",["Asia","Africa","South America","Australia"],1],
+["Which sea has no coastline?",["Red Sea","Sargasso Sea","Black Sea","Caspian Sea"],1],
+["What is the largest country by land area?",["Canada","USA","China","Russia"],3],
+["Which strait separates Europe and Africa?",["Bering Strait","Strait of Gibraltar","Strait of Hormuz","Bosphorus"],1],
+["What is the driest continent on Earth?",["Africa","Australia","Antarctica","Asia"],2],
+["Which river flows through Egypt?",["Amazon","Nile","Congo","Niger"],1],
+["What is the capital city of Canada?",["Toronto","Vancouver","Ottawa","Montreal"],2],
+["Which country has the most time zones?",["USA","Russia","China","France"],3],
+["What is the largest island in the world?",["Madagascar","Greenland","Borneo","New Guinea"],1],
+["Which mountain range separates Europe from Asia?",["Alps","Andes","Ural Mountains","Himalayas"],2]
+],
+movies:[
+["Which movie features the quote 'I'll be back'?",["Predator","The Terminator","RoboCop","Total Recall"],1],
+["Who directed the movie 'Jaws'?",["George Lucas","Steven Spielberg","James Cameron","Martin Scorsese"],1],
+["What is the highest-grossing film of all time (unadjusted)?",["Titanic","Avatar","Avengers: Endgame","Star Wars"],1],
+["Which show features the fictional town of Hawkins, Indiana?",["Riverdale","Stranger Things","Twin Peaks","Fargo"],1],
+["Who played Iron Man in the Marvel Cinematic Universe?",["Chris Evans","Chris Hemsworth","Robert Downey Jr.","Mark Ruffalo"],2],
+["Which animated studio created 'Toy Story'?",["DreamWorks","Pixar","Illumination","Blue Sky Studios"],1],
+["What is the name of the coffee shop in 'Friends'?",["Central Perk","The Grind","Java Junction","Bean There"],0],
+["Which film won the Academy Award for Best Picture in 2020?",["1917","Joker","Parasite","Once Upon a Time in Hollywood"],2],
+["Who plays the lead role in 'Breaking Bad'?",["Aaron Paul","Bryan Cranston","Bob Odenkirk","Dean Norris"],1],
+["What is Batman's alter ego?",["Tony Stark","Bruce Wayne","Clark Kent","Peter Parker"],1],
+["Which fantasy series features the character Frodo Baggins?",["Harry Potter","The Lord of the Rings","Narnia","Game of Thrones"],1],
+["What is the name of the ship in 'Titanic'?",["Britannic","Olympic","Titanic","Carpathia"],2],
+["Which TV series is set in the fictional Westeros?",["The Witcher","Vikings","Game of Thrones","House of Cards"],2],
+["Who directed 'Inception'?",["Christopher Nolan","Denis Villeneuve","Ridley Scott","David Fincher"],0],
+["What is the highest-grossing animated film of all time?",["Frozen","Frozen II","The Lion King (2019)","Minions"],1]
+],
+sports:[
+["How many players are on a standard soccer team on the field?",["9","10","11","12"],2],
+["In which sport would you perform a 'slam dunk'?",["Volleyball","Basketball","Tennis","Badminton"],1],
+["How often are the Summer Olympic Games held?",["Every 2 years","Every 3 years","Every 4 years","Every 5 years"],2],
+["What sport is known as 'the king of sports' worldwide?",["Cricket","Football/Soccer","Basketball","Rugby"],1],
+["How many points is a touchdown worth in American football?",["3","6","7","10"],1],
+["In tennis, what is a score of zero called?",["Nil","Love","Duck","Zero"],1],
+["Which country has won the most FIFA World Cups?",["Germany","Argentina","Italy","Brazil"],3],
+["How many rings are on the Olympic flag?",["4","5","6","7"],1],
+["What is the maximum score in ten-pin bowling?",["200","250","300","350"],2],
+["In golf, what term means one stroke under par?",["Bogey","Birdie","Eagle","Albatross"],1],
+["How many players are on a basketball court per team?",["4","5","6","7"],1],
+["Which sport uses terms like 'love', 'deuce', and 'ace'?",["Badminton","Table Tennis","Tennis","Squash"],2],
+["What color card signals a player's ejection in soccer?",["Yellow","Red","Blue","Green"],1],
+["How long is a marathon in kilometers (approx)?",["21 km","32 km","42 km","50 km"],2],
+["In boxing, how many rounds are typically in a championship fight?",["8","10","12","15"],2]
+],
+music:[
+["Which instrument has 88 keys?",["Guitar","Piano","Violin","Harp"],1],
+["Who is known as the 'King of Pop'?",["Elvis Presley","Michael Jackson","Prince","James Brown"],1],
+["Which band released the album 'Abbey Road'?",["The Rolling Stones","The Beatles","Led Zeppelin","Pink Floyd"],1],
+["How many strings does a standard violin have?",["3","4","5","6"],1],
+["Which genre originated in New Orleans in the late 19th century?",["Rock","Jazz","Blues","Country"],1],
+["Who composed 'Symphony No. 9'?",["Mozart","Bach","Beethoven","Chopin"],2],
+["Which pop star released the album '1989'?",["Ariana Grande","Taylor Swift","Katy Perry","Beyoncé"],1],
+["What does 'a cappella' mean?",["With instruments","Without instruments","Very loud","Very slow"],1],
+["Which instrument is central to reggae music?",["Bass guitar","Trumpet","Sitar","Accordion"],0],
+["Who is known for the song 'Bohemian Rhapsody'?",["The Who","Queen","Genesis","Eagles"],1],
+["What is the term for singing without musical accompaniment?",["Solo","Duet","A cappella","Chorus"],2],
+["Which country is famous for originating flamenco music?",["Italy","Spain","Portugal","Greece"],1],
+["How many members were originally in the band ABBA?",["2","3","4","5"],2],
+["What music streaming platform launched in 2008 in Sweden?",["Apple Music","Spotify","Tidal","Deezer"],1],
+["Which instrument family does the cello belong to?",["Brass","Woodwind","Percussion","String"],3]
+],
+tech:[
+["What does 'CPU' stand for?",["Central Process Unit","Central Processing Unit","Computer Personal Unit","Central Processor Utility"],1],
+["Who co-founded Apple alongside Steve Jobs?",["Bill Gates","Steve Wozniak","Elon Musk","Jeff Bezos"],1],
+["What does 'HTTP' stand for?",["HyperText Transfer Protocol","High Transfer Text Protocol","HyperText Type Protocol","Home Tool Transfer Protocol"],0],
+["Which company developed the Android operating system?",["Apple","Microsoft","Google","Samsung"],2],
+["What does 'AI' stand for?",["Automated Interface","Artificial Intelligence","Applied Informatics","Advanced Integration"],1],
+["What year was the first iPhone released?",["2005","2007","2009","2011"],1],
+["What does 'URL' stand for?",["Uniform Resource Locator","Universal Reference Link","United Resource Locator","Uniform Reference Locator"],0],
+["Which programming language is known for web page interactivity?",["Python","JavaScript","C++","Swift"],1],
+["What does 'RAM' stand for?",["Random Access Memory","Read Access Memory","Random Allocation Module","Rapid Access Memory"],0],
+["Which company created the Windows operating system?",["Apple","IBM","Microsoft","Google"],2],
+["What is the name of Elon Musk's electric car company?",["SpaceX","Tesla","Neuralink","Solar City"],1],
+["What does 'GPU' stand for?",["General Processing Unit","Graphics Processing Unit","Global Processing Unit","Graphic Program Unit"],1],
+["Which social media platform uses a bird as its former logo?",["Facebook","Instagram","Twitter (X)","LinkedIn"],2],
+["What does 'Wi-Fi' commonly refer to?",["Wireless Fidelity branding for wireless networking","Wired Field","Wide Field Internet","Wireless File"],0],
+["Which company owns YouTube?",["Microsoft","Google","Amazon","Meta"],1]
+],
+nature:[
+["What is the largest mammal in the world?",["Elephant","Blue whale","Giraffe","Hippopotamus"],1],
+["How many legs does a spider have?",["6","8","10","12"],1],
+["What is a baby kangaroo called?",["Cub","Joey","Kit","Pup"],1],
+["Which bird is known for its inability to fly and lives in Antarctica?",["Ostrich","Penguin","Emu","Kiwi"],1],
+["What do you call a group of lions?",["Pack","Pride","Herd","Flock"],1],
+["Which animal is known as the 'Ship of the Desert'?",["Horse","Camel","Donkey","Goat"],1],
+["What is the fastest land animal?",["Lion","Cheetah","Horse","Antelope"],1],
+["How many hearts does an octopus have?",["1","2","3","4"],2],
+["Which tree is known to live for thousands of years?",["Oak","Bristlecone Pine","Maple","Birch"],1],
+["What is the largest species of big cat?",["Lion","Tiger","Jaguar","Leopard"],1],
+["Which animal can change its skin color?",["Iguana","Chameleon","Gecko","Frog"],1],
+["What is a group of wolves called?",["Pack","Herd","Colony","Troop"],0],
+["Which mammal lays eggs?",["Kangaroo","Platypus","Koala","Wombat"],1],
+["What is the tallest land animal?",["Elephant","Giraffe","Camel","Moose"],1],
+["Which insect is known for producing honey?",["Wasp","Bee","Ant","Beetle"],1]
+],
+pop:[
+["Which social media app is known for short dance videos?",["Twitter","TikTok","LinkedIn","Reddit"],1],
+["What color is associated with the Barbie movie's marketing?",["Blue","Pink","Green","Yellow"],1],
+["Which fast food chain uses a golden arches logo?",["Burger King","Wendy's","McDonald's","KFC"],2],
+["What streaming platform is known for the show 'Stranger Things'?",["Hulu","Netflix","Disney+","HBO Max"],1],
+["Which singer is known as 'Queen Bey'?",["Rihanna","Beyoncé","Adele","Alicia Keys"],1],
+["What is the name of the social platform formerly known as Twitter?",["Threads","X","Bluesky","Mastodon"],1],
+["Which brand's mascot is a red-haired girl with pigtails?",["McDonald's","Wendy's","KFC","Chick-fil-A"],1],
+["What annual event awards the 'Album of the Year'?",["Oscars","Grammys","Emmys","Golden Globes"],1],
+["Which gaming console is made by Sony?",["Xbox","PlayStation","Switch","Wii"],1],
+["What is the name of the popular battle royale game by Epic Games?",["Fortnite","PUBG","Apex Legends","Warzone"],0],
+["Which coffee chain uses a green mermaid logo?",["Costa Coffee","Starbucks","Dunkin'","Peet's Coffee"],1],
+["What is the highest-selling video game franchise of all time?",["Call of Duty","Mario","Minecraft","Grand Theft Auto"],1],
+["Which app is known for photo sharing with filters?",["Snapchat","Instagram","Pinterest","Flickr"],1],
+["What is the term for a video that spreads rapidly online?",["Trending","Viral","Breaking","Streaming"],1],
+["Which brand created the Air Jordan sneaker line?",["Adidas","Nike","Puma","Reebok"],1]
+]
+};
+
+/* =========================================================
+   STATE + STORAGE
+   ========================================================= */
+const LS = {
+  bestOverall: 'qb_best_overall',
+  bestMode: id => 'qb_best_' + id,
+  streakBest: 'qb_streak_best',
+  dailyDate: 'qb_daily_date',
+  dailyScore: 'qb_daily_score',
+  dailyBestScore: 'qb_daily_bestscore',
+  dailyStreak: 'qb_daily_streak',
+  dailyLastPlayed: 'qb_daily_lastplayed'
+};
+function getNum(key, fallback){ const v = localStorage.getItem(key); return v===null ? fallback : parseInt(v,10); }
+function setNum(key, val){ localStorage.setItem(key, String(val)); }
+function getStr(key){ return localStorage.getItem(key); }
+function setStr(key,val){ localStorage.setItem(key,val); }
+
+const state = {
+  screen:'home',
+  modeId:null,
+  isDaily:false,
+  queue:[],
+  qi:0,
+  score:0,
+  correct:0,
+  wrong:0,
+  lives:3,
+  streak:0,
+  bestStreakThisRound:0,
+  timer:null,
+  timeLeft:15,
+  answered:false
+};
+
+/* =========================================================
+   NAV
+   ========================================================= */
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  state.screen = id;
+  if(id==='home') renderHome();
+  if(id==='modeselect') renderModeSelect();
+  if(id==='daily') renderDailyIntro();
+  showBannerAds();
+}
+document.querySelectorAll('[data-nav]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const target = btn.getAttribute('data-nav');
+    if(btn.getAttribute('data-quick')){
+      goTo('modeselect');
+      return;
+    }
+    goTo(target);
+  });
+});
+
+/* =========================================================
+   HOME
+   ========================================================= */
+function renderHome(){
+  document.getElementById('home-best').textContent = getNum(LS.bestOverall,0);
+  document.getElementById('home-daily-streak').textContent = getNum(LS.dailyStreak,0);
+}
+
+/* =========================================================
+   MODE SELECT
+   ========================================================= */
+function renderModeSelect(){
+  const grid = document.getElementById('mode-grid');
+  grid.innerHTML = '';
+  MODES.forEach(m=>{
+    const div = document.createElement('div');
+    div.className = 'mode-tag';
+    div.style.setProperty('--m-color', m.color);
+    div.innerHTML = `<span class="emoji">${m.emoji}</span><span class="name">${m.name}</span><span class="best">best ${getNum(LS.bestMode(m.id),0)}</span>`;
+    div.addEventListener('click', ()=> startRound(m.id, false));
+    grid.appendChild(div);
+  });
+}
+
+/* =========================================================
+   SHUFFLE HELPERS
+   ========================================================= */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function buildQueue(modeId){
+  const raw = QUESTIONS[modeId];
+  return shuffle(raw).map(item=>{
+    const [text, opts, correctIdx] = item;
+    const order = shuffle(opts.map((o,i)=>i));
+    const newOpts = order.map(i=>opts[i]);
+    const newCorrect = order.indexOf(correctIdx);
+    return {text, opts:newOpts, correct:newCorrect};
+  });
+}
+function seededDailyQueue(){
+  // deterministic pick: same set for everyone on the same calendar day
+  const today = new Date();
+  const dateKey = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let seed = 0;
+  for(let i=0;i<dateKey.length;i++) seed += dateKey.charCodeAt(i) * (i+1);
+  const allModeIds = MODES.map(m=>m.id);
+  const pool = [];
+  allModeIds.forEach(id=> QUESTIONS[id].forEach(q=> pool.push(q)) );
+  // simple seeded shuffle
+  function seededRand(){ seed = (seed*9301+49297)%233280; return seed/233280; }
+  const shuffled = pool.slice();
+  for(let i=shuffled.length-1;i>0;i--){
+    const j = Math.floor(seededRand()*(i+1));
+    [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+  }
+  return shuffled.slice(0,15).map(item=>{
+    const [text, opts, correctIdx] = item;
+    const order = shuffle(opts.map((o,i)=>i));
+    const newOpts = order.map(i=>opts[i]);
+    const newCorrect = order.indexOf(correctIdx);
+    return {text, opts:newOpts, correct:newCorrect};
+  });
+}
+
+/* =========================================================
+   ROUND FLOW
+   ========================================================= */
+function startRound(modeId, isDaily){
+  state.modeId = modeId;
+  state.isDaily = !!isDaily;
+  state.queue = isDaily ? seededDailyQueue() : buildQueue(modeId);
+  state.qi = 0;
+  state.score = 0;
+  state.correct = 0;
+  state.wrong = 0;
+  state.lives = 3;
+  state.streak = 0;
+  state.bestStreakThisRound = 0;
+  goTo('play');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  state.answered = false;
+  const q = state.queue[state.qi];
+  document.getElementById('q-index').textContent = `Question ${state.qi+1} / 15`;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('progress-fill').style.width = ((state.qi)/15*100)+'%';
+  document.getElementById('hud-lives').textContent = '♥'.repeat(state.lives) + '♡'.repeat(3-state.lives);
+  document.getElementById('streak-flag').textContent = state.streak>=2 ? `🔥 ${state.streak} in a row` : '';
+
+  const optWrap = document.getElementById('q-options');
+  optWrap.innerHTML = '';
+  q.opts.forEach((opt, idx)=>{
+    const b = document.createElement('button');
+    b.className = 'option';
+    b.textContent = opt;
+    b.addEventListener('click', ()=> handleAnswer(idx));
+    optWrap.appendChild(b);
+  });
+
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(state.timer);
+  state.timeLeft = 15;
+  const el = document.getElementById('hud-timer');
+  el.classList.remove('warn');
+  el.textContent = '00:' + String(state.timeLeft).padStart(2,'0');
+  state.timer = setInterval(()=>{
+    state.timeLeft--;
+    el.textContent = '00:' + String(state.timeLeft).padStart(2,'0');
+    if(state.timeLeft<=5) el.classList.add('warn');
+    if(state.timeLeft<=0){
+      clearInterval(state.timer);
+      if(!state.answered) handleAnswer(-1); // timeout = wrong
+    }
+  },1000);
+}
+
+function handleAnswer(idx){
+  if(state.answered) return;
+  state.answered = true;
+  clearInterval(state.timer);
+  const q = state.queue[state.qi];
+  const opts = document.querySelectorAll('#q-options .option');
+  opts.forEach(o=>o.setAttribute('disabled','true'));
+
+  const isCorrect = idx === q.correct;
+  if(isCorrect){
+    opts[idx].classList.add('correct');
+    state.score++;
+    state.correct++;
+    state.streak++;
+    state.bestStreakThisRound = Math.max(state.bestStreakThisRound, state.streak);
+  } else {
+    if(idx>=0) opts[idx].classList.add('wrong');
+    opts[q.correct].classList.add('correct');
+    state.wrong++;
+    state.streak = 0;
+    state.lives--;
+  }
+
+  setTimeout(()=>{
+    if(state.lives<=0){
+      showGameOver();
+      return;
+    }
+    state.qi++;
+    if(state.qi>=15){
+      finishRound();
+    } else {
+      renderQuestion();
+    }
+  }, 850);
+}
+
+/* =========================================================
+   RESULTS
+   ========================================================= */
+function finishRound(){
+  document.getElementById('progress-fill').style.width = '100%';
+  const bestOverall = Math.max(getNum(LS.bestOverall,0), state.score);
+  setNum(LS.bestOverall, bestOverall);
+
+  if(state.isDaily){
+    finishDaily();
+    return;
+  }
+
+  const bestModeKey = LS.bestMode(state.modeId);
+  const bestMode = Math.max(getNum(bestModeKey,0), state.score);
+  setNum(bestModeKey, bestMode);
+  const streakBest = Math.max(getNum(LS.streakBest,0), state.bestStreakThisRound);
+  setNum(LS.streakBest, streakBest);
+
+  document.getElementById('res-score').textContent = state.score;
+  document.getElementById('res-correct').textContent = state.correct;
+  document.getElementById('res-wrong').textContent = state.wrong;
+  document.getElementById('res-best').textContent = bestMode;
+  document.getElementById('res-streak').textContent = streakBest;
+
+  // Interstitial ad between games, then show results
+  showInterstitialAd(()=>{
+    goTo('results');
+  });
+}
+
+document.getElementById('res-again').addEventListener('click', ()=> startRound(state.modeId, false));
+document.getElementById('res-change').addEventListener('click', ()=> goTo('modeselect'));
+document.getElementById('res-home').addEventListener('click', ()=> goTo('home'));
+
+/* =========================================================
+   GAME OVER + REWARDED CONTINUE
+   ========================================================= */
+function showGameOver(){
+  document.getElementById('go-score').textContent = state.score;
+  document.getElementById('go-streak').textContent = state.bestStreakThisRound;
+  goTo('gameover');
+}
+document.getElementById('go-tryagain').addEventListener('click', ()=> startRound(state.modeId, state.isDaily));
+document.getElementById('go-home').addEventListener('click', ()=> goTo('home'));
+document.getElementById('go-watchad').addEventListener('click', ()=>{
+  showRewardedAd(()=>{
+    // reward granted: +1 life, resume same question index
+    state.lives = 1;
+    goTo('play');
+    renderQuestion();
+  });
+});
+
+/* =========================================================
+   DAILY CHALLENGE
+   ========================================================= */
+function todayKey(){
+  const d = new Date();
+  return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+}
+function renderDailyIntro(){
+  const key = todayKey();
+  const storedDate = getStr(LS.dailyDate);
+  const playedToday = storedDate === key;
+  document.getElementById('daily-today-best').textContent = playedToday ? getNum(LS.dailyBestScore,0) : '—';
+  document.getElementById('daily-streak-box').textContent = getNum(LS.dailyStreak,0);
+  const btn = document.getElementById('daily-start');
+  btn.textContent = playedToday ? "Play Today's Challenge Again" : "Start Today's Challenge";
+}
+document.getElementById('daily-start').addEventListener('click', ()=> startRound(null, true));
+
+function finishDaily(){
+  const key = todayKey();
+  const prevDate = getStr(LS.dailyDate);
+  let bestToday = state.score;
+  if(prevDate === key){
+    bestToday = Math.max(getNum(LS.dailyBestScore,0), state.score);
+  }
+  setStr(LS.dailyDate, key);
+  setNum(LS.dailyBestScore, bestToday);
+
+  // streak: only increments the first time a NEW day is completed
+  const lastPlayed = getStr(LS.dailyLastPlayed);
+  if(lastPlayed !== key){
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate()-1);
+    const yKey = yesterday.getFullYear()+'-'+(yesterday.getMonth()+1)+'-'+yesterday.getDate();
+    const newStreak = (lastPlayed === yKey) ? getNum(LS.dailyStreak,0)+1 : 1;
+    setNum(LS.dailyStreak, newStreak);
+    setStr(LS.dailyLastPlayed, key);
+  }
+
+  document.getElementById('dr-score').textContent = state.score;
+  document.getElementById('dr-best').textContent = getNum(LS.dailyBestScore,0);
+  document.getElementById('dr-streak').textContent = getNum(LS.dailyStreak,0);
+
+  showInterstitialAd(()=>{
+    goTo('dailyresult');
+  });
+}
+document.getElementById('dr-home').addEventListener('click', ()=> goTo('home'));
+
+/* =========================================================
+   INIT
+   ========================================================= */
+renderHome();
+showBannerAds();
+
+})();
+</script>
+</body>
+</html>
